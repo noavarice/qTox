@@ -19,8 +19,6 @@
 
 #include "textformatter.h"
 
-#include <QMap>
-#include <QPair>
 #include <QRegularExpression>
 #include <QVector>
 
@@ -64,12 +62,12 @@ static const QString MULTILINE_CODE = QStringLiteral("(?<=^|[^`])"
 
 // Items in vector associated with TextStyle values respectively. Do NOT change this order
 static const QVector<QString> htmlPatterns{QStringLiteral("<b>%1</b>"),
-                                                QStringLiteral("<i>%1</i>"),
-                                                QStringLiteral("<u>%1</u>"),
-                                                QStringLiteral("<s>%1</s>"),
-                                                QStringLiteral(
-                                                    "<font color=#595959><code>%1</code></font>"),
-                                                QStringLiteral("<a href=\"%1%2\">%2</a>")};
+                                           QStringLiteral("<i>%1</i>"),
+                                           QStringLiteral("<u>%1</u>"),
+                                           QStringLiteral("<s>%1</s>"),
+                                           QStringLiteral("<font color=#595959><code>%1"
+                                                          "</code></font>"),
+                                           QStringLiteral("<a href=\"%1\">%1</a>")};
 
 #define STRING_FROM_TYPE(type) QString(MARKDOWN_SYMBOLS[type])
 
@@ -88,9 +86,43 @@ static const QVector<QPair<QRegularExpression, QString>> textPatternStyle{
     REGEX_MARKDOWN_PAIR(STRIKE, 2),
     {QRegularExpression(MULTILINE_CODE), htmlPatterns[CODE]}};
 
+static const QString URI_UNRESERVED_SYMBOLS = QStringLiteral("[\\w-.~]");
+
+static const QString URI_SUB_DELIMS = QStringLiteral("[!$&'()*+,;=]");
+
+static const QString URI_PCT_ENCODED = QStringLiteral("(%[0-9a-fA-F]{2})");
+
+static const QString URI_PART_BASE = QString("%1|%2|%3").arg(URI_UNRESERVED_SYMBOLS,
+                                                             URI_PCT_ENCODED,
+                                                             URI_SUB_DELIMS);
+
+static const QString URI_USERINFO = QString("(%1|:)*").arg(URI_PART_BASE);
+
+static const QString URI_HOSTNAME_LABEL = QStringLiteral("(?=[^-])[0-9a-zA-Z-]{1,63}(?<=[^-])");
+
+static const QString URI_HTTP_PORT = QStringLiteral("(:[0-9]*)?");
+
+static const QString URI_HOSTNAME = QString("%1(\\.%1)+").arg(URI_HOSTNAME_LABEL);
+
+static const QString URI_AUTHORITY = QString("(%1@)?%2%3").arg(URI_USERINFO,
+                                                               URI_HOSTNAME,
+                                                               URI_HTTP_PORT);
+
+static const QString URI_PCHAR = QString("(%1|[:@])").arg(URI_PART_BASE);
+
+static const QString URI_PATH_ABEMPTY = QString("(/%1*)*").arg(URI_PCHAR);
+
+static const QString URI_QUERY = QString("(\\?(%1|[/?])*)?").arg(URI_PCHAR);
+
+static const QString URI_FRAGMENT = QString("(\\#(%1|[/?])*)?").arg(URI_PCHAR);
+
+static const QString URI_HTTP = QString("\\bhttp[s]?://%1%2%3%4").arg(URI_AUTHORITY,
+                                                                      URI_PATH_ABEMPTY,
+                                                                      URI_QUERY,
+                                                                      URI_FRAGMENT);
+
 static const QVector<QRegularExpression> urlPatterns {
-    QRegularExpression("((\\bhttp[s]?://(www\\.)?)|(\\bwww\\.))"
-                       "[^. \\n]+\\.[^ \\n]+"),
+    QRegularExpression(URI_HTTP),
     QRegularExpression("\\b(ftp|smb)://[^ \\n]+"),
     QRegularExpression("\\bfile://(localhost)?/[^ \\n]+"),
     QRegularExpression("\\btox:[a-zA-Z\\d]{76}"),
@@ -216,7 +248,7 @@ void TextFormatter::applyHtmlFontStyling(bool showFormattingSymbols)
 void TextFormatter::wrapUrl()
 {
     processUrl(message, [] (QString& str) {
-        return htmlPatterns[TextStyle::HREF].arg(str.startsWith("www") ? "http://" : "", str);
+        return htmlPatterns[TextStyle::HREF].arg(str);
     });
 }
 
