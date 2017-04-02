@@ -36,13 +36,7 @@ enum TextStyle
 
 static const QString HTML_CHARACTER_CODE = QStringLiteral("&#%1");
 
-static const QVector<char> MARKDOWN_SYMBOLS {
-    '*',
-    '/',
-    '_',
-    '~',
-    '`'
-};
+static const QVector<char> MARKDOWN_SYMBOLS{'*', '/', '_', '~', '`'};
 
 static const QString COMMON_PATTERN = QStringLiteral("(?<=^|[^%1<])"
                                                      "[%1]{%2}"
@@ -61,30 +55,25 @@ static const QString MULTILINE_CODE = QStringLiteral("(?<=^|[^`])"
                                                      "(?=$|[^`])");
 
 // Items in vector associated with TextStyle values respectively. Do NOT change this order
-static const QVector<QString> htmlPatterns{QStringLiteral("<b>%1</b>"),
-                                           QStringLiteral("<i>%1</i>"),
-                                           QStringLiteral("<u>%1</u>"),
-                                           QStringLiteral("<s>%1</s>"),
+static const QVector<QString> htmlPatterns{QStringLiteral("<b>%1</b>"), QStringLiteral("<i>%1</i>"),
+                                           QStringLiteral("<u>%1</u>"), QStringLiteral("<s>%1</s>"),
                                            QStringLiteral("<font color=#595959><code>%1"
                                                           "</code></font>"),
                                            QStringLiteral("<a href=\"%1\">%1</a>")};
 
 #define STRING_FROM_TYPE(type) QString(MARKDOWN_SYMBOLS[type])
 
-#define REGEX_MARKDOWN_PAIR(type, count) \
-{QRegularExpression(COMMON_PATTERN.arg(STRING_FROM_TYPE(type), #count)), htmlPatterns[type]}
+#define REGEX_MARKDOWN_PAIR(type, count)                                                           \
+    {                                                                                              \
+        QRegularExpression(COMMON_PATTERN.arg(STRING_FROM_TYPE(type), #count)), htmlPatterns[type] \
+    }
 
 static const QVector<QPair<QRegularExpression, QString>> textPatternStyle{
-    REGEX_MARKDOWN_PAIR(BOLD, 1),
-    REGEX_MARKDOWN_PAIR(ITALIC, 1),
-    REGEX_MARKDOWN_PAIR(UNDERLINE, 1),
-    REGEX_MARKDOWN_PAIR(STRIKE, 1),
-    REGEX_MARKDOWN_PAIR(CODE, 1),
-    REGEX_MARKDOWN_PAIR(BOLD, 2),
-    REGEX_MARKDOWN_PAIR(ITALIC, 2),
-    REGEX_MARKDOWN_PAIR(UNDERLINE, 2),
-    REGEX_MARKDOWN_PAIR(STRIKE, 2),
-    {QRegularExpression(MULTILINE_CODE), htmlPatterns[CODE]}};
+    REGEX_MARKDOWN_PAIR(BOLD, 1),      REGEX_MARKDOWN_PAIR(ITALIC, 1),
+    REGEX_MARKDOWN_PAIR(UNDERLINE, 1), REGEX_MARKDOWN_PAIR(STRIKE, 1),
+    REGEX_MARKDOWN_PAIR(CODE, 1),      REGEX_MARKDOWN_PAIR(BOLD, 2),
+    REGEX_MARKDOWN_PAIR(ITALIC, 2),    REGEX_MARKDOWN_PAIR(UNDERLINE, 2),
+    REGEX_MARKDOWN_PAIR(STRIKE, 2),    {QRegularExpression(MULTILINE_CODE), htmlPatterns[CODE]}};
 
 static const QString URI_UNRESERVED_SYMBOLS = QStringLiteral("[\\w-.~]");
 
@@ -92,9 +81,8 @@ static const QString URI_SUB_DELIMS = QStringLiteral("[!$&'()*+,;=]");
 
 static const QString URI_PCT_ENCODED = QStringLiteral("(%[0-9a-fA-F]{2})");
 
-static const QString URI_PART_BASE = QString("%1|%2|%3").arg(URI_UNRESERVED_SYMBOLS,
-                                                             URI_PCT_ENCODED,
-                                                             URI_SUB_DELIMS);
+static const QString URI_PART_BASE =
+    QString("%1|%2|%3").arg(URI_UNRESERVED_SYMBOLS, URI_PCT_ENCODED, URI_SUB_DELIMS);
 
 static const QString URI_USERINFO = QString("(%1|:)*").arg(URI_PART_BASE);
 
@@ -104,9 +92,8 @@ static const QString URI_HTTP_PORT = QStringLiteral("(:[0-9]*)?");
 
 static const QString URI_HOSTNAME = QString("%1(\\.%1)+").arg(URI_HOSTNAME_LABEL);
 
-static const QString URI_AUTHORITY = QString("(%1@)?%2%3").arg(URI_USERINFO,
-                                                               URI_HOSTNAME,
-                                                               URI_HTTP_PORT);
+static const QString URI_AUTHORITY =
+    QString("(%1@)?%2%3").arg(URI_USERINFO, URI_HOSTNAME, URI_HTTP_PORT);
 
 static const QString URI_PCHAR = QString("(%1|[:@])").arg(URI_PART_BASE);
 
@@ -116,18 +103,16 @@ static const QString URI_QUERY = QString("(\\?(%1|[/?])*)?").arg(URI_PCHAR);
 
 static const QString URI_FRAGMENT = QString("(\\#(%1|[/?])*)?").arg(URI_PCHAR);
 
-static const QString URI_HTTP = QString("\\bhttp[s]?://%1%2%3%4").arg(URI_AUTHORITY,
-                                                                      URI_PATH_ABEMPTY,
-                                                                      URI_QUERY,
-                                                                      URI_FRAGMENT);
+static const QString URI_HTTP =
+    QString("\\bhttp[s]?://%1%2%3%4").arg(URI_AUTHORITY, URI_PATH_ABEMPTY, URI_QUERY, URI_FRAGMENT);
 
-static const QVector<QRegularExpression> urlPatterns {
-    QRegularExpression(URI_HTTP),
-    QRegularExpression("\\b(ftp|smb)://[^ \\n]+"),
-    QRegularExpression("\\bfile://(localhost)?/[^ \\n]+"),
-    QRegularExpression("\\btox:[a-zA-Z\\d]{76}"),
-    QRegularExpression("\\b(mailto|tox):[^ \\n]+@[^ \\n]+")
-};
+static const QVector<QRegularExpression> urlPatterns{QRegularExpression(URI_HTTP),
+                                                     QRegularExpression("\\b(ftp|smb)://[^ \\n]+"),
+                                                     QRegularExpression(
+                                                         "\\bfile://(localhost)?/[^ \\n]+"),
+                                                     QRegularExpression("\\btox:[a-zA-Z\\d]{76}"),
+                                                     QRegularExpression(
+                                                         "\\b(mailto|tox):[^ \\n]+@[^ \\n]+")};
 
 /**
  * @class TextFormatter
@@ -204,7 +189,7 @@ static void processUrl(QString& str, std::function<QString(QString&)> func)
  */
 void TextFormatter::applyHtmlFontStyling(bool showFormattingSymbols)
 {
-    processUrl(message, [] (QString& str) {
+    processUrl(message, [](QString& str) {
         for (char c : MARKDOWN_SYMBOLS) {
             QString charCode = QString::number(static_cast<int>(c));
             str.replace(c, HTML_CHARACTER_CODE.arg(charCode));
@@ -247,9 +232,7 @@ void TextFormatter::applyHtmlFontStyling(bool showFormattingSymbols)
  */
 void TextFormatter::wrapUrl()
 {
-    processUrl(message, [] (QString& str) {
-        return htmlPatterns[TextStyle::HREF].arg(str);
-    });
+    processUrl(message, [](QString& str) { return htmlPatterns[TextStyle::HREF].arg(str); });
 }
 
 /**

@@ -71,7 +71,7 @@ static const StringToString multilineCode{
     {QStringLiteral("```int main()\n{\n    return 0;\n}```"),
      QStringLiteral("<font color=#595959><code>int main()\n{\n    return 0;\n}</code></font>")}};
 
-static const StringToString urlCases {
+static const StringToString urlCases{
     {QStringLiteral("https://github.com/qTox/qTox/issues/4233"),
      QStringLiteral("<a href=\"https://github.com/qTox/qTox/issues/4233\">"
                     "https://github.com/qTox/qTox/issues/4233</a>")},
@@ -102,10 +102,11 @@ static const StringToString urlCases {
                     "http://site.com/part3 "
                     "and one more time "
                     "http://www.site.com/part1/part2"),
-     QStringLiteral("<a href=\"http://site.com/part1/part2\">http://site.com/part1/part2</a> "
-                    "<a href=\"http://site.com/part3\">http://site.com/part3</a> "
-                    "and one more time "
-                    "<a href=\"http://www.site.com/part1/part2\">http://www.site.com/part1/part2</a>")},
+     QStringLiteral(
+         "<a href=\"http://site.com/part1/part2\">http://site.com/part1/part2</a> "
+         "<a href=\"http://site.com/part3\">http://site.com/part3</a> "
+         "and one more time "
+         "<a href=\"http://www.site.com/part1/part2\">http://www.site.com/part1/part2</a>")},
 };
 
 static const QString outputFormat = "\n==========<  Start value   >==========\n%1\n"
