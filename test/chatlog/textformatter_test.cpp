@@ -20,10 +20,7 @@
 #include "src/chatlog/textformatter.h"
 #include "test/common.h"
 
-#include <QList>
 #include <QMap>
-#include <QString>
-#include <QVector>
 #include <QVector>
 
 #include <check.h>
@@ -82,8 +79,6 @@ static const StringToString urlCases {
      QStringLiteral("No conflicts with <i>italic "
                     "<a href=\"https://github.com/qTox/qTox/issues/4233\">"
                     "https://github.com/qTox/qTox/issues/4233</a> font</i>")},
-    {QStringLiteral("www.youtube.com"),
-     QStringLiteral("<a href=\"http://www.youtube.com\">www.youtube.com</a>")},
     {QStringLiteral("https://url.com/some*url/some*more*url/"),
      QStringLiteral("<a href=\"https://url.com/some*url/some*more*url/\">"
                     "https://url.com/some*url/some*more*url/</a>")},
@@ -93,9 +88,6 @@ static const StringToString urlCases {
     {QStringLiteral("https://url.com/some~url/some~more~url/"),
      QStringLiteral("<a href=\"https://url.com/some~url/some~more~url/\">"
                     "https://url.com/some~url/some~more~url/</a>")},
-    {QStringLiteral("https://url.com/some`url/some`more`url/"),
-     QStringLiteral("<a href=\"https://url.com/some`url/some`more`url/\">"
-                    "https://url.com/some`url/some`more`url/</a>")},
     // Test case from issue #4275
     {QStringLiteral("http://www.metacritic.com/game/pc/mass-effect-andromeda\n"
                     "http://www.metacritic.com/game/playstation-4/mass-effect-andromeda\n"
@@ -109,12 +101,16 @@ static const StringToString urlCases {
     {QStringLiteral("http://site.com/part1/part2 "
                     "http://site.com/part3 "
                     "and one more time "
-                    "www.site.com/part1/part2"),
+                    "http://www.site.com/part1/part2"),
      QStringLiteral("<a href=\"http://site.com/part1/part2\">http://site.com/part1/part2</a> "
                     "<a href=\"http://site.com/part3\">http://site.com/part3</a> "
                     "and one more time "
-                    "<a href=\"http://www.site.com/part1/part2\">www.site.com/part1/part2</a>")},
+                    "<a href=\"http://www.site.com/part1/part2\">http://www.site.com/part1/part2</a>")},
 };
+
+static const QString outputFormat = "\n==========<  Start value   >==========\n%1\n"
+                                    "\n==========< Expected value >==========\n%2\n"
+                                    "\n==========< Observed value >==========\n%3\n\n";
 
 /**
  * @brief Testing cases which are common for all types of formatting except multiline code
@@ -125,10 +121,12 @@ static const StringToString urlCases {
 static void commonTest(bool showSymbols, const StringToString map, const QString signs)
 {
     for (QString key : map.keys()) {
-        QString source = key.arg(signs);
-        TextFormatter tf = TextFormatter(source);
-        QString result = map[key].arg(showSymbols ? signs : "", signsToTags[signs]);
-        ck_assert(tf.applyStyling(showSymbols) == result);
+        QString startValue = key.arg(signs);
+        TextFormatter tf = TextFormatter(startValue);
+        QString observedValue = tf.applyStyling(showSymbols);
+        QString expectedValue = map[key].arg(showSymbols ? signs : "", signsToTags[signs]);
+        QString output = outputFormat.arg(startValue, expectedValue, observedValue);
+        ck_assert_msg(expectedValue == observedValue, output.toUtf8().constData());
     }
 }
 
@@ -138,9 +136,13 @@ static void commonTest(bool showSymbols, const StringToString map, const QString
  */
 static void commonExceptionsTest(const QString signs)
 {
-    for (QString source : commonExceptions) {
-        TextFormatter tf = TextFormatter(source.arg(signs));
-        ck_assert(tf.applyStyling(false) == source.arg(signs));
+    for (QString key : commonExceptions) {
+        QString startValue = key.arg(signs);
+        TextFormatter tf = TextFormatter(startValue);
+        QString observedValue = tf.applyStyling(false);
+        QString expectedValue = key.arg(signs);
+        QString output = outputFormat.arg(startValue, expectedValue, observedValue);
+        ck_assert_msg(expectedValue == observedValue, output.toUtf8().constData());
     }
 }
 
@@ -151,8 +153,12 @@ static void commonExceptionsTest(const QString signs)
 static void specialTest(const StringToString map)
 {
     for (QString key : map.keys()) {
-        TextFormatter tf = TextFormatter(key);
-        ck_assert(tf.applyStyling(false) == map[key]);
+        QString startValue = key;
+        TextFormatter tf = TextFormatter(startValue);
+        QString observedValue = tf.applyStyling(false);
+        QString expectedValue = map[key];
+        QString output = outputFormat.arg(startValue, expectedValue, observedValue);
+        ck_assert_msg(expectedValue == observedValue, output.toUtf8().constData());
     }
 }
 
