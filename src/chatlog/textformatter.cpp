@@ -88,12 +88,12 @@ static const QString URI_USERINFO = QString("(%1|:)*").arg(URI_PART_BASE);
 
 static const QString URI_HOSTNAME_LABEL = QStringLiteral("(?=[^-])[0-9a-zA-Z-]{1,63}(?<=[^-])");
 
-static const QString URI_HTTP_PORT = QStringLiteral("(:[0-9]*)?");
+static const QString URI_HTTP_PORT = QStringLiteral(":[0-9]*");
 
 static const QString URI_HOSTNAME = QString("%1(\\.%1)+").arg(URI_HOSTNAME_LABEL);
 
 static const QString URI_AUTHORITY =
-    QString("(%1@)?%2%3").arg(URI_USERINFO, URI_HOSTNAME, URI_HTTP_PORT);
+    QString("(%1@)?%2(%3)?").arg(URI_USERINFO, URI_HOSTNAME, URI_HTTP_PORT);
 
 static const QString URI_PCHAR = QString("(%1|[:@])").arg(URI_PART_BASE);
 
@@ -106,8 +106,14 @@ static const QString URI_FRAGMENT = QString("(\\#(%1|[/?])*)?").arg(URI_PCHAR);
 static const QString URI_HTTP =
     QString("\\bhttp[s]?://%1%2%3%4").arg(URI_AUTHORITY, URI_PATH_ABEMPTY, URI_QUERY, URI_FRAGMENT);
 
+static const QString URI_FTP_TYPECODE = QStringLiteral(";type=[aidAID]");
+
+static const QString URI_FTP =
+    QString("\\bftp://%1(%2(%3)?)?").arg(URI_AUTHORITY, URI_PATH_ABEMPTY, URI_FTP_TYPECODE);
+
 static const QVector<QRegularExpression> urlPatterns{QRegularExpression(URI_HTTP),
-                                                     QRegularExpression("\\b(ftp|smb)://[^ \\n]+"),
+                                                     QRegularExpression(URI_FTP),
+                                                     QRegularExpression("\\bsmb://[^ \\n]+"),
                                                      QRegularExpression(
                                                          "\\bfile://(localhost)?/[^ \\n]+"),
                                                      QRegularExpression("\\btox:[a-zA-Z\\d]{76}"),
