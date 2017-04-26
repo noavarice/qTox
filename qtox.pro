@@ -462,6 +462,7 @@ HEADERS  += \
     src/net/toxuri.h \
     src/nexus.h \
     src/model/chatlog/basechatmessagemodel.h \
+    src/model/chatlog/textmessagemodel.h \
     src/persistence/db/rawdatabase.h \
     src/persistence/history.h \
     src/persistence/offlinemsgengine.h \
@@ -584,6 +585,7 @@ SOURCES += \
     src/net/toxuri.cpp \
     src/nexus.cpp \
     src/model/chatlog/basechatmessagemodel.cpp \
+    src/model/chatlog/textmessagemodel.cpp \
     src/persistence/db/rawdatabase.cpp \
     src/persistence/history.cpp \
     src/persistence/offlinemsgengine.cpp \

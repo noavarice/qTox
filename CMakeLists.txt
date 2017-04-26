@@ -246,6 +246,8 @@ set(${PROJECT_NAME}_SOURCES
   src/ipc.h
   src/model/chatlog/basechatmessagemodel.cpp
   src/model/chatlog/basechatmessagemodel.h
+  src/model/chatlog/textmessagemodel.cpp
+  src/model/chatlog/textmessagemodel.h
   src/net/autoupdate.cpp
   src/net/autoupdate.h
   src/net/avatarbroadcaster.cpp
