@@ -461,6 +461,7 @@ HEADERS  += \
     src/net/toxme.h \
     src/net/toxuri.h \
     src/nexus.h \
+    src/model/chatlog/basechatmessagemodel.h \
     src/persistence/db/rawdatabase.h \
     src/persistence/history.h \
     src/persistence/offlinemsgengine.h \
@@ -582,6 +583,7 @@ SOURCES += \
     src/net/toxme.cpp \
     src/net/toxuri.cpp \
     src/nexus.cpp \
+    src/model/chatlog/basechatmessagemodel.cpp \
     src/persistence/db/rawdatabase.cpp \
     src/persistence/history.cpp \
     src/persistence/offlinemsgengine.cpp \
