@@ -25,6 +25,90 @@
 #include "settings.h"
 #include "db/rawdatabase.h"
 
+static const QString CREATE_TABLES_QUERY = "CREATE TABLE IF NOT EXISTS peers ("
+                                           "    id INTEGER PRIMARY KEY,"
+                                           "    public_key TEXT NOT NULL UNIQUE"
+                                           ");"
+                                           "CREATE TABLE IF NOT EXISTS aliases ("
+                                           "    id INTEGER PRIMARY KEY,"
+                                           "    owner INTEGER,"
+                                           "    display_name BLOB NOT NULL,"
+                                           "    UNIQUE(owner, display_name)"
+                                           ");"
+                                           "CREATE TABLE IF NOT EXISTS history ("
+                                           "    id INTEGER PRIMARY KEY,"
+                                           "    timestamp INTEGER NOT NULL,"
+                                           "    chat_id INTEGER NOT NULL,"
+                                           "    sender_alias INTEGER NOT NULL,"
+                                           "    message BLOB NOT NULL"
+                                           ");"
+                                           "CREATE TABLE IF NOT EXISTS faux_offline_pending ("
+                                           "    id INTEGER PRIMARY KEY"
+                                           ");";
+
+static const QString PURGE_TABLES_QUERY = "DELETE FROM faux_offline_pending;"
+                                          "DELETE FROM history;"
+                                          "DELETE FROM aliases;"
+                                          "DELETE FROM peers;"
+                                          "VACUUM;";
+
+static const QString DELETE_FRIEND_HISTORY_QUERY = "DELETE FROM faux_offline_pending "
+                                                   "WHERE faux_offline_pending.id IN ("
+                                                   "    SELECT faux_offline_pending.id"
+                                                   "    FROM faux_offline_pending"
+                                                   "    LEFT JOIN history"
+                                                   "    ON faux_offline_pending.id = history.id"
+                                                   "    WHERE chat_id=%1"
+                                                   "); "
+                                                   "DELETE FROM history WHERE chat_id=%1;"
+                                                   "DELETE FROM aliases WHERE owner=%1;"
+                                                   "DELETE FROM peers WHERE id=%1;"
+                                                   "VACUUM;";
+
+static const QString GET_PEERS_INFO = "SELECT public_key, id FROM peers;";
+
+static const QString ADD_PEER_QUERY = "INSERT INTO peers (id, public_key) VALUES (%1, '%2');";
+
+static const QString ADD_ALIAS_QUERY = "INSERT OR IGNORE INTO aliases (owner, display_name) "
+                                       "VALUES (%1, ?);";
+
+static const QString INSERT_HISTORY_MESSAGE_QUERY = "INSERT INTO history "
+                                                    "(timestamp, chat_id, message, sender_alias) "
+                                                    "VALUES (%1, %2, ?, ("
+                                                    "    CASE WHEN changes() IS 0 THEN ("
+                                                    "        SELECT id"
+                                                    "        FROM aliases"
+                                                    "        WHERE owner=%3 AND display_name=?"
+                                                    "    )"
+                                                    "    ELSE last_insert_rowid()"
+                                                    "    END)"
+                                                    ");";
+
+static const QString ADD_FAUX_OFFLINE_MESSAGE_QUERY = "INSERT INTO faux_offline_pending (id) "
+                                                      "VALUES (last_insert_rowid());";
+
+static const QString DELETE_FAUX_OFFLINE_MESSAGE_QUERY = "DELETE FROM faux_offline_pending "
+                                                         "WHERE id=%1;";
+
+static const QString GET_HISTORY_MESSAGES_QUERY = "SELECT history.id,"
+                                                  "       faux_offline_pending.id,"
+                                                  "       timestamp,"
+                                                  "       chat.public_key,"
+                                                  "       aliases.display_name,"
+                                                  "       sender.public_key,"
+                                                  "       message "
+                                                  "FROM history "
+                                                  "LEFT JOIN faux_offline_pending "
+                                                  "ON history.id = faux_offline_pending.id "
+                                                  "JOIN peers chat "
+                                                  "ON chat_id = chat.id "
+                                                  "JOIN aliases "
+                                                  "ON sender_alias = aliases.id "
+                                                  "JOIN peers sender "
+                                                  "ON aliases.owner = sender.id "
+                                                  "WHERE timestamp BETWEEN %1 AND %2 "
+                                                  "AND chat.public_key='%3';";
+
 /**
  * @class History
  * @brief Interacts with the profile database to save the chat history.
@@ -46,18 +130,10 @@ History::History(std::shared_ptr<RawDatabase> db)
         return;
     }
 
-    db->execLater(
-        "CREATE TABLE IF NOT EXISTS peers (id INTEGER PRIMARY KEY, public_key TEXT NOT NULL "
-        "UNIQUE);"
-        "CREATE TABLE IF NOT EXISTS aliases (id INTEGER PRIMARY KEY, owner INTEGER,"
-        "display_name BLOB NOT NULL, UNIQUE(owner, display_name));"
-        "CREATE TABLE IF NOT EXISTS history (id INTEGER PRIMARY KEY, timestamp INTEGER NOT NULL, "
-        "chat_id INTEGER NOT NULL, sender_alias INTEGER NOT NULL, "
-        "message BLOB NOT NULL);"
-        "CREATE TABLE IF NOT EXISTS faux_offline_pending (id INTEGER PRIMARY KEY);");
+    db->execLater(CREATE_TABLES_QUERY);
 
     // Cache our current peers
-    db->execLater(RawDatabase::Query{"SELECT public_key, id FROM peers;",
+    db->execLater(RawDatabase::Query{GET_PEERS_INFO,
                                      [this](const QVector<QVariant>& row) {
                                          peers[row[0].toString()] = row[1].toInt();
                                      }});
@@ -92,11 +168,7 @@ void History::eraseHistory()
         return;
     }
 
-    db->execNow("DELETE FROM faux_offline_pending;"
-                "DELETE FROM history;"
-                "DELETE FROM aliases;"
-                "DELETE FROM peers;"
-                "VACUUM;");
+    db->execNow(PURGE_TABLES_QUERY);
 }
 
 /**
@@ -115,17 +187,7 @@ void History::removeFriendHistory(const QString& friendPk)
 
     int64_t id = peers[friendPk];
 
-    QString queryText = QString("DELETE FROM faux_offline_pending "
-                                "WHERE faux_offline_pending.id IN ( "
-                                "    SELECT faux_offline_pending.id FROM faux_offline_pending "
-                                "    LEFT JOIN history ON faux_offline_pending.id = history.id "
-                                "    WHERE chat_id=%1 "
-                                "); "
-                                "DELETE FROM history WHERE chat_id=%1; "
-                                "DELETE FROM aliases WHERE owner=%1; "
-                                "DELETE FROM peers WHERE id=%1; "
-                                "VACUUM;")
-                            .arg(id);
+    QString queryText = DELETE_FRIEND_HISTORY_QUERY.arg(id);
 
     if (db->execNow(queryText)) {
         peers.remove(friendPk);
@@ -163,10 +225,7 @@ History::generateNewMessageQueries(const QString& friendPk, const QString& messa
         }
 
         peers[friendPk] = peerId;
-        queries += RawDatabase::Query(("INSERT INTO peers (id, public_key) "
-                                       "VALUES (%1, '"
-                                       + friendPk + "');")
-                                          .arg(peerId));
+        queries += RawDatabase::Query{ADD_PEER_QUERY.arg(peerId).arg(friendPk)};
     }
 
     // Get the db id of the sender of the message
@@ -181,36 +240,22 @@ History::generateNewMessageQueries(const QString& friendPk, const QString& messa
         }
 
         peers[sender] = senderId;
-        queries += RawDatabase::Query{("INSERT INTO peers (id, public_key) "
-                                       "VALUES (%1, '"
-                                       + sender + "');")
-                                          .arg(senderId)};
+        queries += RawDatabase::Query{ADD_PEER_QUERY.arg(senderId).arg(sender)};
     }
 
-    queries += RawDatabase::Query(
-        QString("INSERT OR IGNORE INTO aliases (owner, display_name) VALUES (%1, ?);").arg(senderId),
-        {dispName.toUtf8()});
+    queries += RawDatabase::Query(ADD_ALIAS_QUERY.arg(senderId), {dispName.toUtf8()});
 
     // If the alias already existed, the insert will ignore the conflict and last_insert_rowid()
     // will return garbage,
     // so we have to check changes() and manually fetch the row ID in this case
-    queries +=
-        RawDatabase::Query(QString(
-                               "INSERT INTO history (timestamp, chat_id, message, sender_alias) "
-                               "VALUES (%1, %2, ?, ("
-                               "  CASE WHEN changes() IS 0 THEN ("
-                               "    SELECT id FROM aliases WHERE owner=%3 AND display_name=?)"
-                               "  ELSE last_insert_rowid() END"
-                               "));")
-                               .arg(time.toMSecsSinceEpoch())
-                               .arg(peerId)
-                               .arg(senderId),
-                           {message.toUtf8(), dispName.toUtf8()}, insertIdCallback);
+    queries += RawDatabase::Query(INSERT_HISTORY_MESSAGE_QUERY.arg(time.toMSecsSinceEpoch())
+                                                              .arg(peerId)
+                                                              .arg(senderId),
+                                  {message.toUtf8(), dispName.toUtf8()},
+                                  insertIdCallback);
 
     if (!isSent) {
-        queries += RawDatabase::Query{"INSERT INTO faux_offline_pending (id) VALUES ("
-                                      "    last_insert_rowid()"
-                                      ");"};
+        queries += RawDatabase::Query{ADD_FAUX_OFFLINE_MESSAGE_QUERY};
     }
 
     return queries;
@@ -267,18 +312,9 @@ QList<History::HistMessage> History::getChatHistory(const QString& friendPk, con
     };
 
     // Don't forget to update the rowCallback if you change the selected columns!
-    QString queryText =
-        QString("SELECT history.id, faux_offline_pending.id, timestamp, "
-                "chat.public_key, aliases.display_name, sender.public_key, "
-                "message FROM history "
-                "LEFT JOIN faux_offline_pending ON history.id = faux_offline_pending.id "
-                "JOIN peers chat ON chat_id = chat.id "
-                "JOIN aliases ON sender_alias = aliases.id "
-                "JOIN peers sender ON aliases.owner = sender.id "
-                "WHERE timestamp BETWEEN %1 AND %2 AND chat.public_key='%3';")
-            .arg(from.toMSecsSinceEpoch())
-            .arg(to.toMSecsSinceEpoch())
-            .arg(friendPk);
+    QString queryText = GET_HISTORY_MESSAGES_QUERY.arg(from.toMSecsSinceEpoch())
+                                                  .arg(to.toMSecsSinceEpoch())
+                                                  .arg(friendPk);
 
     db->execNow({queryText, rowCallback});
 
@@ -297,5 +333,5 @@ void History::markAsSent(qint64 messageId)
         return;
     }
 
-    db->execLater(QString("DELETE FROM faux_offline_pending WHERE id=%1;").arg(messageId));
+    db->execLater(DELETE_FAUX_OFFLINE_MESSAGE_QUERY.arg(messageId));
 }
