@@ -366,12 +366,12 @@ HEADERS  += \
     src/core/toxpk.h \
     src/core/toxstring.h \
     src/friendlist.h \
-    src/groupinvite.h \
     src/grouplist.h \
     src/ipc.h \
     src/model/contact.h \
     src/model/friend.h \
     src/model/group.h \
+    src/model/groupinvite.h \
     src/net/autoupdate.h \
     src/net/avatarbroadcaster.h \
     src/net/toxme.h \
@@ -488,13 +488,13 @@ SOURCES += \
     src/core/toxpk.cpp \
     src/core/toxstring.cpp \
     src/friendlist.cpp \
-    src/groupinvite.cpp \
     src/grouplist.cpp \
     src/ipc.cpp \
     src/main.cpp \
     src/model/contact.cpp \
     src/model/friend.cpp \
     src/model/group.cpp \
+    src/model/groupinvite.cpp \
     src/net/autoupdate.cpp \
     src/net/avatarbroadcaster.cpp \
     src/net/toxme.cpp \
