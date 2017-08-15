@@ -116,7 +116,7 @@ void GroupInviteForm::show(ContentLayout* contentLayout)
  * @param invite Information that invited person needs to see an invitation
  * @return true if notification is needed, false otherwise
  */
-bool GroupInviteForm::addGroupInvite(int32_t friendId, uint8_t type, QByteArray invite)
+bool GroupInviteForm::addGroupInvite(uint32_t friendId, uint8_t type, const QByteArray& invite)
 {
     // supress duplicate invite messages
     for (GroupInviteWidget* existing : invites) {

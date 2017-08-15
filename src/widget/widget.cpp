@@ -1645,7 +1645,7 @@ void Widget::copyFriendIdToClipboard(int friendId)
     }
 }
 
-void Widget::onGroupInviteReceived(int32_t friendId, uint8_t type, QByteArray invite)
+void Widget::onGroupInviteReceived(uint32_t friendId, uint8_t type, const QByteArray& invite)
 {
     Friend* f = FriendList::findFriend(friendId);
     updateFriendActivity(f);

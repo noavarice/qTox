@@ -161,7 +161,7 @@ public slots:
     void onMessageSendResult(uint32_t friendId, const QString& message, int messageId);
     void onReceiptRecieved(int friendId, int receipt);
     void onEmptyGroupCreated(int groupId);
-    void onGroupInviteReceived(int32_t friendId, uint8_t type, QByteArray invite);
+    void onGroupInviteReceived(uint32_t friendId, uint8_t type, const QByteArray& invite);
     void onGroupInviteAccepted(int32_t friendId, uint8_t type, QByteArray invite);
     void onGroupMessageReceived(int groupnumber, int peernumber, const QString& message, bool isAction);
     void onGroupNamelistChanged(int groupnumber, int peernumber, uint8_t change);
