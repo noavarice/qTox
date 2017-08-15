@@ -19,14 +19,16 @@
 
 #include "groupinvitewidget.h"
 
-#include "src/core/core.h"
-#include "src/nexus.h"
+#include "src/friendlist.h"
+#include "src/model/friend.h"
 #include "src/persistence/settings.h"
 #include "src/widget/tool/croppinglabel.h"
 
 #include <QHBoxLayout>
 #include <QPushButton>
 #include <QSignalMapper>
+
+static const QString INVITE_INFO_MESSAGE = GroupInviteWidget::tr("Invited by %1 on %2 at %3.");
 
 /**
  * @class GroupInviteWidget
@@ -57,13 +59,14 @@ GroupInviteWidget::GroupInviteWidget(QWidget* parent, const GroupInvite& invite)
  */
 void GroupInviteWidget::retranslateUi()
 {
-    QString name = Nexus::getCore()->getFriendUsername(inviteInfo.getFriendId());
-    QDateTime inviteDate = inviteInfo.getInviteDate();
-    QString date = inviteDate.toString(Settings::getInstance().getDateFormat());
-    QString time = inviteDate.toString(Settings::getInstance().getTimestampFormat());
+    const Friend* f = FriendList::findFriend(inviteInfo.getFriendId());
+    const QString name = f->getDisplayedName().toHtmlEscaped();
+    const QDateTime inviteDate = inviteInfo.getInviteDate();
+    const Settings& s = Settings::getInstance();
+    const QString date = inviteDate.toString(s.getDateFormat());
+    const QString time = inviteDate.toString(s.getTimestampFormat());
 
-    inviteMessageLabel->setText(
-        tr("Invited by %1 on %2 at %3.").arg("<b>%1</b>").arg(name.toHtmlEscaped(), date, time));
+    inviteMessageLabel->setText(INVITE_INFO_MESSAGE.arg("<b>%1</b>").arg(name, date, time));
     acceptButton->setText(tr("Join"));
     rejectButton->setText(tr("Decline"));
 }
