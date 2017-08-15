@@ -30,6 +30,7 @@
 #include <QObject>
 
 class CoreAV;
+class GroupInvite;
 class Profile;
 class QTimer;
 
@@ -62,7 +63,7 @@ public:
 
     bool isFriendOnline(uint32_t friendId) const;
     bool hasFriendWithPublicKey(const ToxPk& publicKey) const;
-    uint32_t joinGroupchat(int32_t friendId, uint8_t type, const uint8_t* pubkey, uint16_t length) const;
+    uint32_t joinGroupchat(const GroupInvite& inviteInfo) const;
     void quitGroupChat(int groupId) const;
 
     QString getUsername() const;
@@ -135,7 +136,7 @@ signals:
     void friendLastSeenChanged(uint32_t friendId, const QDateTime& dateTime);
 
     void emptyGroupCreated(int groupnumber);
-    void groupInviteReceived(uint32_t friendId, uint8_t type, QByteArray publicKey);
+    void groupInviteReceived(const GroupInvite& inviteInfo);
     void groupMessageReceived(int groupnumber, int peernumber, const QString& message, bool isAction);
     void groupNamelistChanged(int groupnumber, int peernumber, uint8_t change);
     void groupTitleChanged(int groupnumber, const QString& author, const QString& title);

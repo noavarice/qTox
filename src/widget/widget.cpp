@@ -54,6 +54,7 @@
 #include "src/model/friend.h"
 #include "src/friendlist.h"
 #include "src/model/group.h"
+#include "src/model/groupinvite.h"
 #include "src/grouplist.h"
 #include "src/net/autoupdate.h"
 #include "src/nexus.h"
@@ -1645,16 +1646,17 @@ void Widget::copyFriendIdToClipboard(int friendId)
     }
 }
 
-void Widget::onGroupInviteReceived(uint32_t friendId, uint8_t type, const QByteArray& invite)
+void Widget::onGroupInviteReceived(const GroupInvite& inviteInfo)
 {
-    Friend* f = FriendList::findFriend(friendId);
+    Friend* f = FriendList::findFriend(inviteInfo.getFriendId());
     updateFriendActivity(f);
+    const uint8_t confType = inviteInfo.getType();
 
-    if (type == TOX_CONFERENCE_TYPE_TEXT || type == TOX_CONFERENCE_TYPE_AV) {
+    if (confType == TOX_CONFERENCE_TYPE_TEXT || confType == TOX_CONFERENCE_TYPE_AV) {
         if (Settings::getInstance().getAutoGroupInvite(f->getPublicKey())) {
-            onGroupInviteAccepted(friendId, type, invite);
+            onGroupInviteAccepted(inviteInfo);
         } else {
-            if (!groupInviteForm->addGroupInvite(friendId, type, invite)) {
+            if (!groupInviteForm->addGroupInvite(inviteInfo)) {
                 return;
             }
             ++unreadGroupInvites;
@@ -1662,15 +1664,14 @@ void Widget::onGroupInviteReceived(uint32_t friendId, uint8_t type, const QByteA
             newMessageAlert(window(), isActiveWindow(), true, true);
         }
     } else {
-        qWarning() << "onGroupInviteReceived: Unknown groupchat type:" << type;
+        qWarning() << "onGroupInviteReceived: Unknown groupchat type:" << confType;
         return;
     }
 }
 
-void Widget::onGroupInviteAccepted(int32_t friendId, uint8_t type, QByteArray invite)
+void Widget::onGroupInviteAccepted(const GroupInvite& inviteInfo)
 {
-    int groupId =
-        Nexus::getCore()->joinGroupchat(friendId, type, (uint8_t*)invite.data(), invite.length());
+    const int groupId = Nexus::getCore()->joinGroupchat(inviteInfo);
     if (groupId < 0) {
         qWarning() << "onGroupInviteAccepted: Unable to accept group invite";
         return;
