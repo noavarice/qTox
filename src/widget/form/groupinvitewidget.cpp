@@ -21,7 +21,7 @@
 
 #include "src/friendlist.h"
 #include "src/model/friend.h"
-#include "src/persistence/settings.h"
+#include "src/persistence/idatetimeformatprovider.h"
 #include "src/widget/tool/croppinglabel.h"
 
 #include <QHBoxLayout>
@@ -37,16 +37,27 @@ static const QString INVITE_INFO_MESSAGE = GroupInviteWidget::tr("Invited by %1 
  * and provides buttons to accept/reject it
  */
 
-GroupInviteWidget::GroupInviteWidget(QWidget* parent, const GroupInvite& invite)
+GroupInviteWidget::GroupInviteWidget(QWidget* parent,
+                                     const GroupInvite& invite,
+                                     const IDateTimeFormatProvider& provider)
     : QWidget(parent)
     , acceptButton(new QPushButton(this))
     , rejectButton(new QPushButton(this))
     , inviteMessageLabel(new CroppingLabel(this))
     , widgetLayout(new QHBoxLayout(this))
     , inviteInfo(invite)
+    , formatProvider{provider}
 {
     connect(acceptButton, &QPushButton::clicked, [=]() { emit accepted(inviteInfo); });
     connect(rejectButton, &QPushButton::clicked, [=]() { emit rejected(inviteInfo); });
+    connect(&formatProvider,
+            &IDateTimeFormatProvider::dateFormatChanged,
+            this,
+            &GroupInviteWidget::onDateFormatChanged);
+    connect(&formatProvider,
+            &IDateTimeFormatProvider::timestampFormatChanged,
+            this,
+            &GroupInviteWidget::onTimestampFormatChanged);
     widgetLayout->addWidget(inviteMessageLabel);
     widgetLayout->addWidget(acceptButton);
     widgetLayout->addWidget(rejectButton);
@@ -59,16 +70,31 @@ GroupInviteWidget::GroupInviteWidget(QWidget* parent, const GroupInvite& invite)
  */
 void GroupInviteWidget::retranslateUi()
 {
+    updateInviteInfoMessage(formatProvider.getDateFormat(), formatProvider.getTimestampFormat());
+}
+
+void GroupInviteWidget::updateInviteInfoMessage(const QString& dateFormat,
+                                                const QString& timestampFormat)
+{
     const Friend* f = FriendList::findFriend(inviteInfo.getFriendId());
     const QString name = f->getDisplayedName().toHtmlEscaped();
     const QDateTime inviteDate = inviteInfo.getInviteDate();
-    const Settings& s = Settings::getInstance();
-    const QString date = inviteDate.toString(s.getDateFormat());
-    const QString time = inviteDate.toString(s.getTimestampFormat());
+    const QString date = inviteDate.toString(dateFormat);
+    const QString time = inviteDate.toString(timestampFormat);
 
     inviteMessageLabel->setText(INVITE_INFO_MESSAGE.arg("<b>%1</b>").arg(name, date, time));
     acceptButton->setText(tr("Join"));
     rejectButton->setText(tr("Decline"));
+}
+
+void GroupInviteWidget::onDateFormatChanged(const QString &newFormat)
+{
+    updateInviteInfoMessage(newFormat, formatProvider.getTimestampFormat());
+}
+
+void GroupInviteWidget::onTimestampFormatChanged(const QString &newFormat)
+{
+    updateInviteInfoMessage(formatProvider.getDateFormat(), newFormat);
 }
 
 /**

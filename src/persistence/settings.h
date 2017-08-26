@@ -23,13 +23,14 @@
 
 #include "src/core/corestructs.h"
 #include "src/core/toxencrypt.h"
+#include "src/persistence/idatetimeformatprovider.h"
+
 #include <QDate>
 #include <QFlags>
 #include <QFont>
 #include <QHash>
 #include <QMutex>
 #include <QNetworkProxy>
-#include <QObject>
 #include <QPixmap>
 
 class ToxPk;
@@ -39,7 +40,7 @@ namespace Db {
 enum class syncType;
 }
 
-class Settings : public QObject
+class Settings : public IDateTimeFormatProvider
 {
     Q_OBJECT
 
@@ -421,10 +422,10 @@ public:
     const QFont& getChatMessageFont() const;
     void setChatMessageFont(const QFont& font);
 
-    const QString& getTimestampFormat() const;
+    const QString& getTimestampFormat() const override final;
     void setTimestampFormat(const QString& format);
 
-    const QString& getDateFormat() const;
+    const QString& getDateFormat() const override final;
     void setDateFormat(const QString& format);
 
     bool getMinimizeOnClose() const;

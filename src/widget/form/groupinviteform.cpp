@@ -123,7 +123,7 @@ bool GroupInviteForm::addGroupInvite(const GroupInvite& inviteInfo)
             return false;
         }
     }
-    GroupInviteWidget* widget = new GroupInviteWidget(this, inviteInfo);
+    GroupInviteWidget* widget = new GroupInviteWidget(this, inviteInfo, Settings::getInstance());
     scroll->widget()->layout()->addWidget(widget);
     invites.append(widget);
     connect(widget, &GroupInviteWidget::accepted, [this](const GroupInvite& inviteInfo) {

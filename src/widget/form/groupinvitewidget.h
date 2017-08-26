@@ -25,6 +25,7 @@
 #include <QWidget>
 
 class CroppingLabel;
+class IDateTimeFormatProvider;
 
 class QHBoxLayout;
 class QPushButton;
@@ -33,7 +34,7 @@ class GroupInviteWidget : public QWidget
 {
     Q_OBJECT
 public:
-    GroupInviteWidget(QWidget* parent, const GroupInvite& invite);
+    GroupInviteWidget(QWidget* parent, const GroupInvite& invite, const IDateTimeFormatProvider& p);
     void retranslateUi();
     const GroupInvite getInviteInfo() const;
 
@@ -42,11 +43,20 @@ signals:
     void rejected(const GroupInvite& invite);
 
 private:
+    void updateInviteInfoMessage(const QString& dateFormat, const QString& timestampFormat);
+
+private slots:
+    void onDateFormatChanged(const QString& newFormat);
+    void onTimestampFormatChanged(const QString& newFormat);
+
+private:
     QPushButton* acceptButton;
     QPushButton* rejectButton;
     CroppingLabel* inviteMessageLabel;
     QHBoxLayout* widgetLayout;
+
     GroupInvite inviteInfo;
+    const IDateTimeFormatProvider& formatProvider;
 };
 
 #endif // GROUPINVITEWIDGET_H

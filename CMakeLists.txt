@@ -271,6 +271,8 @@ set(${PROJECT_NAME}_SOURCES
   src/persistence/db/rawdatabase.h
   src/persistence/history.cpp
   src/persistence/history.h
+  src/persistence/idatetimeformatprovider.cpp
+  src/persistence/idatetimeformatprovider.h
   src/persistence/offlinemsgengine.cpp
   src/persistence/offlinemsgengine.h
   src/persistence/profile.cpp
